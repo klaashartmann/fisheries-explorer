@@ -23,8 +23,9 @@ SIM_DYNAMIC='Dynamic'
 SIM_STATIC='Static (Equilibrium)'
 #Version history:
 #1.00 Initial release from Hobart Class 1
-#1.01 Made fishery crash instantaneous. 
-VERSIONSTRING = '1.01'
+#1.01 Made fishery crash instantaneous.
+#1.02 Initial version on Google Code
+VERSIONSTRING = '1.02'
 
 #Globals that specify the current simulation and management type
 #(to be subsumed at a later stage...) 
