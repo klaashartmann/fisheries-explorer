@@ -1,5 +1,7 @@
 #By running "python setup.py py2exe" this script generates a windows stand-alone
 #distribution of the Fisheries Explorer
+#Copyright 2010, University of Tasmania, Australian Seafood CRC
+#This program is released under the Open Software License ("OSL") v. 3.0. See OSL3.0.htm for details.
 
 from distutils.core import setup
 import py2exe

@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
-'''Fisheries Economics Masterclass model'''
+'''
+Fisheries Economics Masterclass model
+Copyright 2010, University of Tasmania, Australian Seafood CRC
+This program is released under the Open Software License ("OSL") v. 3.0. See OSL3.0.htm for details.
+'''
 
 import threading
 import wx

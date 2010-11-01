@@ -1,5 +1,11 @@
 #!/usr/bin/env python
-"""Fisheries Economics Masterclass GUI"""
+"""
+Fisheries Economics Masterclass GUI
+Klaas Hartmann 2010
+Copyright 2010, University of Tasmania, Australian Seafood CRC
+This program is released under the Open Software License ("OSL") v. 3.0. See OSL3.0.htm for details.
+"""
+
 
 import wx
 import wx.html
@@ -25,7 +31,8 @@ SIM_STATIC='Static (Equilibrium)'
 #1.00 Initial release from Hobart Class 1
 #1.01 Made fishery crash instantaneous.
 #1.02 Initial version on Google Code
-VERSIONSTRING = '1.02'
+#1.03 Included licencing information
+VERSIONSTRING = '1.03'
 
 #Globals that specify the current simulation and management type
 #(to be subsumed at a later stage...) 
@@ -299,7 +306,7 @@ class MenuBar(wx.MenuBar):
                 
     def on_license(self,event):
         '''License handler, shows modal AboutBox'''
-        dlg = AboutBox(self.parent_frame,title='Fisheries Explorer License',filename='license.html')
+        dlg = AboutBox(self.parent_frame,title='Fisheries Explorer License',filename='OSL3.0.htm')
         dlg.ShowModal()
         dlg.Destroy()
                 

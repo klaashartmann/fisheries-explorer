@@ -1,4 +1,8 @@
 import numpy as np
+# Colours and colourmaps that are readable by most colourblind people
+# Copyright 2010, University of Tasmania, Australian Seafood CRC
+# This program is released under the Open Software License ("OSL") v. 3.0. See OSL3.0.htm for details.
+
 
 #A set of safe plotting colours from http://jfly.iam.u-tokyo.ac.jp/color/
 rgb = np.array([[0,0,0],[230,159,0],[86,180,233],[0,158,115],[240,228,66],[0,114,178],[213,94,0],[204,121,167]])
