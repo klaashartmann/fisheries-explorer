@@ -15,7 +15,7 @@ shutil.rmtree("build", ignore_errors=True)
 shutil.rmtree("dist", ignore_errors=True)
 
 data_files = matplotlib.get_py2exe_datafiles()
-data_files += ['license.html','about.html',('images',["images/fishnet.ico","images/seafoodcrc.png",'images/fishnet.png','images/about.png','images/fish.png'])]
+data_files += ['OSL3.0.htm','about.html',('images',["images/fishnet.ico","images/seafoodcrc.png",'images/fishnet.png','images/about.png','images/fish.png'])]
 dll_excludes = ['libgdk-win32-2.0-0.dll', 'libgobject-2.0-0.dll', 'tcl84.dll',
                 'tk84.dll',
                 'MSVCP90.dll', 'mswsock.dll', 'powrprof.dll']
