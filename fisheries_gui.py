@@ -90,7 +90,8 @@ class Frame(wx.Frame):
     
     def _init_model(self,type='catch'):
         '''Initialise model'''
-        self.model = fisheries_model.lobsterModel(control_type = type)
+        #self.model = fisheries_model.lobsterModel(control_type = type)
+        self.model = fisheries_model.fishModel(control_type = type)
 
     
     def _init_gui(self):
@@ -155,11 +156,11 @@ class Frame(wx.Frame):
             if SIM_TYPE == SIM_STATIC:
                 if MG_TYPE == MG_QUOTA:
                     max= self.parameters['K']*self.parameters['r']/4*1.01
-                    self.model_thread.run(self.model,20,dynamic=False,independent_variable='catch',independent_maximum=max)
+                    self.model_thread.run(self.model,100,dynamic=False,independent_variable='catch',independent_maximum=max)
                 else:
-                    self.model_thread.run(self.model,20,dynamic=False,independent_variable='effort',independent_maximum=6e6)
+                    self.model_thread.run(self.model,100,dynamic=False,independent_variable='effort',independent_maximum=6e6)
             else:
-                self.model_thread.run(self.model,20)
+                self.model_thread.run(self.model,100)
             
             self.computed_parameters = self.parameters
  
