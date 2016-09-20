@@ -1,4 +1,4 @@
-#By running "python setup_osx.py py2exe" this script generates a OSX stand-alone
+#By running "python setup_osx.py py2app" this script generates a OSX stand-alone
 #distribution of the Fisheries Explorer
 #Copyright 2016, University of Tasmania, Australian Seafood CRC
 #This program is released under the Open Software License ("OSL") v. 3.0. See OSL3.0.htm for details.
