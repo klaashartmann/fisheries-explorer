@@ -5,6 +5,13 @@
 
 from setuptools import setup
 
+# Remove the build folder
+shutil.rmtree("build", ignore_errors=True)
+
+# do the same for dist folder
+shutil.rmtree("dist", ignore_errors=True)
+
+
 APP = ['fisheries_gui.py']
 DATA_FILES = ['images','images/about.png','images/fish.ico','images/fish.png','images/fishnet.ico','images/fishnet.png','images/seafoodcrc.png','images/Top Menu_fishing boats.gif']
 OPTIONS = {'argv_emulation': True}
