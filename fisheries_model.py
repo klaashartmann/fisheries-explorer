@@ -556,3 +556,90 @@ def lobsterModel(control_type = 'catch'):
     model = Model(functions = [growthClass,catchClass,economicsClass],initial_state = initial_state)
 
     return model
+
+    
+def fishModel(control_type = 'catch'):
+    
+    '''A generic fish/net model'''
+    
+    #As compared to RL:
+    #catch rate * 100
+    #K / 10
+    #catch / 10
+    #Effort / 100
+    #Marginal cost * 100
+    #Fixed Cost / 10
+    
+    #------------------------------------------
+    #Parameter values customised for this model
+    #------------------------------------------
+    
+    r =         {'value':1,'min':0,'max':2}
+    K =         {'value':700000,'min':0,'max':1000000,'scale':1000,'units':'t'}
+    catch_rate ={'value':100,'min':1,'max':500,'units':'kg/day'}
+    catch =     {'value':150000,'min':0,'max':600000,'scale':1000,'units':'t'}
+    effort =    {'value':1500,'min':0,'max':5000,'description':'Days fished'}
+    fixed_cost ={'value':10000,'min':5000,'max':20000,'units':'$/year','scale':1000,'scale_text':'thousands'}
+    marginal_cost= {'value':1000,'min':500,'max':5000,'units':'$/day'}
+    movement_rate={'value':0,'min':0,'max':20,'units':'vessels/year'}
+    beach_price  = {'value':30,'min':0,'max':60,'units':'$/kg'}
+    discount_rate = {'value':0.07,'min':0,'max':1,'units':''}
+
+    #-----------------------------------------
+    #Functions that control the model dynamics
+    #-----------------------------------------
+
+    #Discrete logistic growth
+    growthClass = PDLogistic()
+    growthClass.r.update(r)
+    growthClass.K.update(K)
+
+    #Catch component
+    if control_type == 'catch':
+        catchClass = CatchFixed()
+        catchClass.catch.update(catch)
+    elif control_type == 'effort':
+        catchClass = EffortFixed()
+        catchClass.effort.update(effort)
+    catchClass.catch_rate.update(catch_rate)
+    
+    #Economics and fleet dynamics
+    economicsClass = Economics()
+    economicsClass.fixed_cost.update(fixed_cost)
+    economicsClass.marginal_cost.update(marginal_cost)
+    economicsClass.movement_rate.update(movement_rate)
+    economicsClass.beach_price.update(beach_price)
+    economicsClass.discount_rate.update(discount_rate)
+
+    #-----------------------------------------
+    #Set the state of the fishery
+    #The attributes here must match what is 
+    #required by the functions PDLogistic,
+    #CatchFixed/EffortFixed and Economics
+    #-----------------------------------------
+    initial_state = State(
+            attributes = {'biomass': {'title': 'Biomass', 'units': 'tonnes','scale':1000},
+                          'catch': {'title': 'Catch', 'units': 'tonnes','scale':1000},
+                          'cpue': {'title': 'CPUE', 'units': 'kg/day','scale':1},
+                          'effort': {'title': 'Effort', 'units': 'Days fished','scale':1000},
+                          'fleet_size': {'title': 'Fleet Size','units': '# vessels','scale':1},
+                          'revenue': {'title': 'Revenue','units': '$ (millions)','scale':1e6},
+                          'cost': {'title': 'Cost','units': '$ (millions)','scale':1e6},
+                          'profit': {'title': 'Profit','units': '$ (millions)','scale':1e6},
+                          'discounted_profit': {'title': 'Discounted profit','units': '$ (millions)','scale':1e6},
+                          })
+    initial_state.default_plot = ['biomass','catch']
+#    initial_state.default_plot = ['catch','revenue','cost','profit']
+    initial_state.attribute_order = ['biomass','catch','profit','revenue','cost','discounted_profit','cpue','effort','fleet_size']
+    #Set the initial fishery parameters
+    initial_state.set(biomass=500000,fleet_size=20)
+
+    #-----------------------------------------
+    #Create the fishery model
+    #-----------------------------------------
+    model = Model(functions = [growthClass,catchClass,economicsClass],initial_state = initial_state)
+
+    return model
+
+
+
