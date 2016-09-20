@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
 Fisheries Economics Masterclass GUI
-Klaas Hartmann 2010
-Copyright 2010, University of Tasmania, Australian Seafood CRC
+Klaas Hartmann 2010,2016
+Copyright 2010,2016 University of Tasmania, Australian Seafood CRC
 This program is released under the Open Software License ("OSL") v. 3.0. See OSL3.0.htm for details.
 """
 
@@ -27,35 +27,36 @@ MG_QUOTA='Output Controlled'
 MG_EFFORT='Input Controlled'
 SIM_DYNAMIC='Dynamic'
 SIM_STATIC='Static (Equilibrium)'
+MODEL_LOBSTER='Lobster Fishery'
+MODEL_NET='Net Fishery'
 #Version history:
 #1.00 Initial release from Hobart Class 1
 #1.01 Made fishery crash instantaneous.
 #1.02 Initial version on Google Code
 #1.03 Included licencing information
-VERSIONSTRING = '1.03'
+#1.04 Model update for second round of master classes, bug fixes and new net model
+VERSIONSTRING = '1.04'
 
 #Globals that specify the current simulation and management type
 #(to be subsumed at a later stage...) 
 SIM_TYPE=''
 MG_TYPE=''
-
+MODEL_TYPE=''
+DEBUG = 1
 
 class Frame(wx.Frame):
     '''The main (only?) GUI Frame'''
     def __init__(self,width,height):
+    	if DEBUG > 0:
+    		print("Frame.__init__")
         wx.Frame.__init__(self,
                           None,
                           size=wx.Size(width,height),
                           title = 'Fisheries Explorer')
-        #self.SetSize(wx.Size(width,height))
-        #Set the starting simulation and management types
-        global SIM_TYPE
-        global MG_TYPE
-        MG_TYPE = MG_QUOTA
-        SIM_TYPE = SIM_STATIC
         self.Maximize()            
+
         #Initialise model components
-        self._init_model()
+        self.set_model(SIM_STATIC,MG_QUOTA,MODEL_NET)
         
         #Initialise model/graph update system
         self._init_update()
@@ -66,6 +67,8 @@ class Frame(wx.Frame):
 
     def _init_update(self):
         '''Initialise model/graph update system'''
+    	if DEBUG > 0:
+    		print("Frame._init_update")
         
         #Will contain current parameters
         self.parameters= {}
@@ -88,14 +91,12 @@ class Frame(wx.Frame):
         #The model execution thread
         self.model_thread = fisheries_model.MultiThreadModelRun(self.model_data_updater)
     
-    def _init_model(self,type='catch'):
-        '''Initialise model'''
-        #self.model = fisheries_model.lobsterModel(control_type = type)
-        self.model = fisheries_model.fishModel(control_type = type)
-
     
     def _init_gui(self):
         '''Initialise GUI components'''
+    	if DEBUG > 0:
+    		print("Frame._init_gui")
+        
         
         #Setup sizers (in hierarchical order)
         self.sizer = wx.FlexGridSizer(rows=2,cols=1)
@@ -137,7 +138,11 @@ class Frame(wx.Frame):
 
     #It still doesn't close cleanly for some unknown reason..
     block = False
+    
     def onCloseWindow(self,event):
+    	if DEBUG > 0:
+    		print("Frame.onCloseWindow")
+        
         self.timer_model.Stop()
         self.timer_model.Destroy()
         self.icon.Destroy()
@@ -146,6 +151,10 @@ class Frame(wx.Frame):
         
     def on_timer_model(self,event):
         '''Rerun the model if parameters have changed'''
+        
+#    	if DEBUG > 0:
+#    		print("Frame.on_timer_model")
+        
         #If parameters have changed we need to recalculate the model
         if self.parameters != self.computed_parameters:
             self.computed_complete=False
@@ -167,6 +176,10 @@ class Frame(wx.Frame):
     init_hack_count = 0
     def on_timer_init_hack(self,event):
         '''A hack to layout the plot panel after load. For some reason the legend is not displayed correctly.'''
+    	if DEBUG > 0:
+    		print("Frame.on_timer_init_hack")
+        
+        
         if self.init_hack_count > 0:
             self.timer_init_hack.Stop()
         self.init_hack_count += 1
@@ -174,34 +187,62 @@ class Frame(wx.Frame):
         self.plot_panel.OnSize()
         self.plot_panel.Layout()
         
-        
- 
-    def on_simulation_change(self,simulation_type,control_type):
-        '''Called if the simulation type (static/dynamic, quota/effort controlled) changes'''
+    def set_model(self,simulation_type,control_type,model_type):
         global SIM_TYPE
         global MG_TYPE
+        global MODEL_TYPE
         SIM_TYPE = simulation_type
         MG_TYPE = control_type
+        MODEL_TYPE= model_type
         
         #Initialise the model with appropriate control type
         if MG_TYPE == MG_QUOTA:
-            self._init_model('catch')
+            type='catch'
         else:
-            self._init_model('effort')
-            
+        	type='effort'
+
+    	if MODEL_TYPE == MODEL_LOBSTER:
+    		self.model = fisheries_model.lobsterModel(control_type = type)
+    	else:
+	        self.model = fisheries_model.fishModel(control_type = type)
+	    
+ 
+    def on_simulation_change(self,simulation_type,control_type,model_type):
+        '''Called if the simulation type (static/dynamic, quota/effort controlled or model type) changes'''
+    	if DEBUG > 0:
+    		print("Frame.on_simulation_change")
+        
+        self.set_model(simulation_type,control_type,model_type)
         self.computed_parameters = None
         self.parameter_panel.set_model(self.model)
-        self.plot_panel.update_visibility()
+        print(self.model.state['catch'])
+        print(self.model.state.attributes['catch']['scale'])
+        self.plot_panel.update_state(self.model.state)
+        
+        self.plot_panel._update_bounds()
+
+#        self.plot_panel.update_visibility()
+        
+        #FIX TO GO HERE!
         self.plot_panel.Layout()
+        self.parameter_panel.on_slide_change(None)
         self.on_timer_model(None)
 
     def on_slide_change(self,event):
         '''Get the latest set of parameters if the sliders have been moved'''
+    	if DEBUG > 0:
+    		print("Frame.on_slide_change")
+        
+        
         #Store the latest set of parameters
 #        if event.GetEventObject() in self.parameter_panel.GetChildren():
         self.parameters = self.parameter_panel.get_parameters()
             
     def model_data_updater(self,state):
+    	if DEBUG > 0:
+    		print("Frame.model_data_updater")
+        
+    
         self.computed_complete=True
         self.model.state = state
         self.plot_panel.update_state(self.model.state)
@@ -213,6 +254,9 @@ class Frame(wx.Frame):
 
 class MenuBar(wx.MenuBar):
     def __init__(self,parent_frame,sim_update_fx=None,parameter_type_fx=None,reset_model_fx=None):
+    	if DEBUG > 0:
+    		print("MenuBar.__init__")
+        
         wx.MenuBar.__init__(self)
         
         self.sim_update_fx = sim_update_fx
@@ -223,7 +267,8 @@ class MenuBar(wx.MenuBar):
         self.scenario_menu = wx.Menu()
         self.reset_model = self.scenario_menu.Append(-1,'Reset Model')
         self.scenario_menu.Append(-1,' ').Enable(False)        
-        self.scenario_menu.AppendRadioItem(-1,'Rock Lobster Fishery')
+        self.model_lobster=self.scenario_menu.AppendRadioItem(-1,MODEL_LOBSTER)
+        self.model_net = self.scenario_menu.AppendRadioItem(-1,MODEL_NET)
         self.scenario_menu.Append(-1,' ').Enable(False)        
         self.static_simulation = self.scenario_menu.AppendRadioItem(-1,SIM_STATIC)
         self.dynamic_simulation = self.scenario_menu.AppendRadioItem(-1,SIM_DYNAMIC)
@@ -241,6 +286,12 @@ class MenuBar(wx.MenuBar):
         else:
             self.input_control.Check()
         
+        if MODEL_TYPE == MODEL_NET:
+        	self.model_net.Check()
+        else:
+        	self.model_lobster.Check()
+        
+        
         
         self.parameter_menu = wx.Menu()
         self.parameter_items = []
@@ -253,6 +304,8 @@ class MenuBar(wx.MenuBar):
         self.Append(self.parameter_menu,'Parameters')
         self.Append(self.help_menu,'Help')
         
+        parent_frame.Bind(wx.EVT_MENU, self.on_simulation_change, self.model_lobster)
+        parent_frame.Bind(wx.EVT_MENU, self.on_simulation_change, self.model_net)
         parent_frame.Bind(wx.EVT_MENU, self.on_simulation_change, self.input_control)
         parent_frame.Bind(wx.EVT_MENU, self.on_simulation_change, self.output_control)
         parent_frame.Bind(wx.EVT_MENU, self.on_simulation_change, self.static_simulation)
@@ -262,6 +315,9 @@ class MenuBar(wx.MenuBar):
         parent_frame.Bind(wx.EVT_MENU, self.on_simulation_change, self.reset_model)
     
     def set_parameter_types(self,types):
+    	if DEBUG > 0:
+    		print("MenuBar.set_parameter_types")
+    
         for item in self.parameter_items:
             self.parameter_menu.Delete(item)
         
@@ -276,37 +332,58 @@ class MenuBar(wx.MenuBar):
         
     def on_reset_model(self,event):
         '''Reset the model'''
+    	if DEBUG > 0:
+    		print("MenuBar.on_reset_model")
+        
         self.reset_model_fx()
 
     def on_parameter_selection(self,event):
         '''Called when a parameter set is selected'''
+    	if DEBUG > 0:
+    		print("MenuBar.on_parameter_selection")
+        
         for item in self.parameter_items:
             if item.IsChecked():
                 self.parameter_type_fx(item.GetText())
                        
         
     def on_simulation_change(self,event):
+    	if DEBUG > 0:
+    		print("MenuBar.on_simulation_change")
+    	
+    	
         if self.input_control.IsChecked():
             control_type = MG_EFFORT
         else:
             control_type = MG_QUOTA
         
+    	if self.model_lobster.IsChecked():
+    		model_type = MODEL_LOBSTER
+    	else:
+    		model_type = MODEL_NET
+
         if self.static_simulation.IsChecked():
             simulation_type = SIM_STATIC
         else:
             simulation_type= SIM_DYNAMIC
-        self.sim_update_fx(simulation_type = simulation_type, control_type = control_type)
+        self.sim_update_fx(simulation_type = simulation_type, control_type = control_type, model_type = model_type)
         event.Skip()
         
            
     def on_about(self,event):
         '''About handler, shows modal AboutBox'''
+    	if DEBUG > 0:
+    		print("MenuBar.on_about")
+        
         dlg = AboutBox(self.parent_frame,title='About Fisheries Explorer',filename='about.html')
         dlg.ShowModal()
         dlg.Destroy()
                 
     def on_license(self,event):
         '''License handler, shows modal AboutBox'''
+    	if DEBUG > 0:
+    		print("MenuBar.on_license")
+        
         dlg = AboutBox(self.parent_frame,title='Fisheries Explorer License',filename='OSL3.0.htm')
         dlg.ShowModal()
         dlg.Destroy()
@@ -315,6 +392,9 @@ class MenuBar(wx.MenuBar):
 class ParameterPanel(wx.Panel):
     '''A panel for parameter input'''
     def __init__(self,parent,model = [],sim_update_fx=None):
+    	if DEBUG > 0:
+    		print("ParameterPanel.__init__")
+    
         wx.Panel.__init__(self,parent)
         self.type_shown = 'All'
         self.model = model
@@ -325,12 +405,18 @@ class ParameterPanel(wx.Panel):
     
     def set_model(self,model):
         '''Set the parameters displayed in the panel (expects a Parameter object)'''
-        self.parameters = model.get_parameters()
+    	if DEBUG > 0:
+    		print("ParameterPanel.set_model")
         self.model = model
+        
+        self.parameters = model.get_parameters()
+
         self.parameter_layout()    
         self.show_parameter_set()
 
     def _base_layout(self):
+    	if DEBUG > 0:
+    		print("ParameterPanel._base_layout")
         
         #Empty lists for storing gui objects (to get parameter values etc)
         self.label_parameters = {}
@@ -374,6 +460,8 @@ class ParameterPanel(wx.Panel):
         
         
     def parameter_layout(self):
+    	if DEBUG > 0:
+    		print("ParameterPanel.parameter_layout")
 
         #Delete all existing objects
         if hasattr(self,'control_sizer'):
@@ -401,16 +489,25 @@ class ParameterPanel(wx.Panel):
 
     
     def on_simulation_change(self,event):
+    	if DEBUG > 0:
+    		print("ParameterPanel.on_simulation_change")
+    
         self.sim_update_fx(simulation_type = self.static_toggle.GetStringSelection(),
                            control_type = self.management_toggle.GetStringSelection())
     
     def on_selection_change(self,event):
         '''Update parameter list when a different parameter set is selected'''
+    	if DEBUG > 0:
+    		print("ParameterPanel.on_selection_change")
+        
         type = self.parameter_choice.GetItems()[self.parameter_choice.GetSelection()]
         self.show_parameter_set(type)
         
     def show_parameter_set(self,type=None):
         '''Show parameters of type'''
+    	if DEBUG > 0:
+    		print("ParameterPanel.show_parameter_set")
+        
         
         #If type is unspecified we show the same parameter set
         if type != None:
@@ -433,6 +530,9 @@ class ParameterPanel(wx.Panel):
         
     def on_slide_change(self,event):
         '''Slider change event updates value label'''
+    	if DEBUG > 0:
+    		print("ParameterPanel.on_slide_change")
+        
         param_values = self.get_parameters()
         for param in (param_values):
             scale_text = ''
@@ -446,6 +546,9 @@ class ParameterPanel(wx.Panel):
 
     def get_parameters(self):
         '''Get a dict of the current parameter values'''
+    	if DEBUG > 0:
+    		print("ParameterPanel.get_parameters")
+        
         out = {}
         for param in self.parameters:
             p = self.parameters[param]
@@ -455,6 +558,9 @@ class ParameterPanel(wx.Panel):
     
     def set_parameters(self,parameter_values):
         '''Update parameters from a dict'''
+    	if DEBUG > 0:
+    		print("ParameterPanel.set_parameters")
+        
         out = {}
         for param in parameter_values.keys():
             if self.parameters.has_key(param):
@@ -474,6 +580,9 @@ class PlotPanel(wx.Panel):
     
     
     def __init__(self,parent):
+    	if DEBUG > 0:
+    		print("PlotPanel.__init__")
+    
         wx.Panel.__init__(self,parent)
 
 
@@ -511,6 +620,8 @@ class PlotPanel(wx.Panel):
         self.Fit()
     
     def OnSize(self,event=None,size=None):
+    	if DEBUG > 0:
+    		print("PlotPanel.OnSize")
         
         if event == None and size == None:
             size = self.canvas_panel.GetClientSize()
@@ -531,6 +642,9 @@ class PlotPanel(wx.Panel):
         
 
     def _setup_control_panel(self):
+    	if DEBUG > 0:
+    		print("PlotPanel._setups_control_panel")
+    
         self._update_line_styles()
         
         #Remove existing widgets
@@ -595,6 +709,9 @@ class PlotPanel(wx.Panel):
         '''
         updates the colours of the control elements
         '''
+    	if DEBUG > 0:
+    		print("PlotPanel._colour_control")
+        
         selected = self.get_selected_parameters()
         for param in self.state.attributes:
             if param in selected:
@@ -610,6 +727,9 @@ class PlotPanel(wx.Panel):
         '''
         Update the colour and style associated with each unit and parameter
         ''' 
+    	if DEBUG > 0:
+    		print("PlotPanel._update_line_styles")
+        
         self.unit_colour = {}
         self.parameter_style = {}
         
@@ -624,17 +744,22 @@ class PlotPanel(wx.Panel):
         #Determine line styles for parameters
         for param in self.state.attribute_order:
             unit = self.state.get_attribute_units(param)
-            print param, unit
             self.parameter_style[param] = self.line_styles[unit_count[unit]]
             unit_count[unit] += 1
 
     def _select_parameters(self,parameters = [],redraw=True):
         '''Set the parameters to be plotted'''
+    	if DEBUG > 0:
+    		print("PlotPanel._select_parameters")
+        
         self.parameters = parameters
         if redraw: 
             self.redraw_fromscratch()
         
     def update_visibility(self):
+    	if DEBUG > 0:
+    		print("PlotPanel.update_visibility")
+    
         if SIM_TYPE == SIM_STATIC:
             enabled = False
         else:
@@ -645,11 +770,13 @@ class PlotPanel(wx.Panel):
         
     def update_state(self,state,redraw=True):
         '''Update the state that is being plotted'''
+    	if DEBUG > 0:
+    		print("PlotPanel.update_state")
+        
         self.state = copy.deepcopy(state)
         if not hasattr(self,'last_parameters'):
             self.last_parameters = {}
             
-        print self.state['discounted_profit']
         import numpy
         self.npv = numpy.nansum(self.state['discounted_profit'])
 #        discount_rate = 0.05
@@ -667,6 +794,8 @@ class PlotPanel(wx.Panel):
 
     def _update_bounds(self):
         '''Update the figure bounds'''
+    	if DEBUG > 0:
+    		print("PlotPanel._update_bounds")
 
             
         def sig_round(number):
@@ -685,7 +814,6 @@ class PlotPanel(wx.Panel):
             
             factor = 10**(numpy.floor(numpy.log10(number*factor_multiple)))/factor_multiple
             rounded = numpy.ceil(number/factor)*factor
-            print number, rounded
             return rounded
             
         self.xbound = 0
@@ -713,6 +841,9 @@ class PlotPanel(wx.Panel):
        
     def get_selected_parameters(self):
         '''Return the parameters that have been selected for plotting'''
+#    	if DEBUG > 0:
+#    		print("PlotPanel.get_selected_parameters")
+        
         out = []
         for param in self.state.attribute_order:
             if self.check_boxes[param].GetValue():
@@ -723,6 +854,9 @@ class PlotPanel(wx.Panel):
         '''
         Returns a list of units that will be plotted
         '''
+#    	if DEBUG > 0:
+#    		print("PlotPanel._get_units")
+        
         units = {}
         for param in self.get_selected_parameters():
             units[self.state.get_attribute_units(param)]=1
@@ -734,6 +868,8 @@ class PlotPanel(wx.Panel):
         Redraw the figure from scratch
         required if the number of axes etc. have changed
         '''
+    	if DEBUG > 0:
+    		print("PlotPanel._setup_axes")
         
         #Clear the figure
         self.fig.clf()
@@ -785,6 +921,9 @@ class PlotPanel(wx.Panel):
         '''
         Update the plots using data in the current state
         '''
+    	if DEBUG > 0:
+    		print("PlotPanel.redraw")
+        
         if self.state == None:
             return  
 
@@ -838,6 +977,9 @@ class PlotPanel(wx.Panel):
         Set the colour of the y axis to color and optionally 
         remove the remaining borders of the graph   
         '''
+    	if DEBUG > 0:
+    		print("PlotPanel._modify_axes")
+        
         def modify_all(object,color=None,remove=False):
             for child in object.get_children():
                 modify_all(child,color,remove)
@@ -869,6 +1011,9 @@ class AboutBox(wx.Dialog):
         title: dialog box title
         filename: the html file to show
         '''
+    	if DEBUG > 0:
+    		print("AboutBox.__init__")
+        
         wx.Dialog.__init__(self,parent,-1,title,size=(500,550))
         
         #Read the html source file

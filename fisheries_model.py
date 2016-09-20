@@ -2,7 +2,7 @@
 
 '''
 Fisheries Economics Masterclass model
-Copyright 2010, University of Tasmania, Australian Seafood CRC
+Copyright 2010,2016 University of Tasmania, Australian Seafood CRC
 This program is released under the Open Software License ("OSL") v. 3.0. See OSL3.0.htm for details.
 '''
 
@@ -455,7 +455,6 @@ class MultiThreadModelRun:
                 for param in self.model.state.keys():
                     self.output_state[param].append(self.model.state[param][-1])
             if self.model.state[self.options['independent_variable']][-1] < self.options['independent_values'][step]:
-                print 'a'
                 self.output_state[self.options['independent_variable']][-1] = self.options['independent_values'][step-1]+1e-6
 #            self.output_state[self.options['independent_variable']][-1] = self.options['independent_values'][step]
 
