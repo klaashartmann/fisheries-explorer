@@ -5,11 +5,6 @@
 
 from setuptools import setup
 
-# Remove the build folder
-shutil.rmtree("build", ignore_errors=True)
-
-# do the same for dist folder
-shutil.rmtree("dist", ignore_errors=True)
 
 
 APP = ['fisheries_gui.py']
