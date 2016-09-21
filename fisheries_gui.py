@@ -215,17 +215,20 @@ class Frame(wx.Frame):
         self.set_model(simulation_type,control_type,model_type)
         self.computed_parameters = None
         self.parameter_panel.set_model(self.model)
+        self.on_slide_change(None)
         print(self.model.state['catch'])
         print(self.model.state.attributes['catch']['scale'])
         self.plot_panel.update_state(self.model.state)
         
         self.plot_panel._update_bounds()
-
-#        self.plot_panel.update_visibility()
+		
+		#Required to enable/disable the time discounted profit line
+        self.plot_panel.update_visibility()
         
         #FIX TO GO HERE!
         self.plot_panel.Layout()
         self.parameter_panel.on_slide_change(None)
+        
         self.on_timer_model(None)
 
     def on_slide_change(self,event):
