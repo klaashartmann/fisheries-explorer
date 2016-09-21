@@ -1,5 +1,7 @@
+Binaries
 build
 dist
 *.pyc
 
 Exercises/~$sh Worksheet.docx
+Exercises/~*.docx
