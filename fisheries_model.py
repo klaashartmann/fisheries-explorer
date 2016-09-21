@@ -631,7 +631,7 @@ def fishModel(control_type = 'catch'):
 #    initial_state.default_plot = ['catch','revenue','cost','profit']
     initial_state.attribute_order = ['biomass','catch','profit','revenue','cost','discounted_profit','cpue','effort','fleet_size']
     #Set the initial fishery parameters
-    initial_state.set(biomass=500000,fleet_size=20)
+    initial_state.set(biomass=500000,fleet_size=50)
 
     #-----------------------------------------
     #Create the fishery model
